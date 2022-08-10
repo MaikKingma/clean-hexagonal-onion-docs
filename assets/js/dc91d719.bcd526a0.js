@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkclean_hexagonal_onion_docs=self.webpackChunkclean_hexagonal_onion_docs||[]).push([[929],{3769:function(n){n.exports=JSON.parse('{"name":"docusaurus-plugin-content-docs","id":"default"}')}}]);
