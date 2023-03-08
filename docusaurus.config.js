@@ -53,12 +53,12 @@ const config = {
           label: 'GitHub',
           position: 'right',
         },
-        {
-          href: 'https://docs.google.com/presentation/d/1xoGRcQx9E_19msC_-rYQdrEVwVN0L30fNDiupI4bcBY/edit?usp=sharing',
-          target: '_blank',
-          label: 'Slides',
-          position: 'right',
-        },
+        // {
+        //   href: 'https://docs.google.com/presentation/d/1xoGRcQx9E_19msC_-rYQdrEVwVN0L30fNDiupI4bcBY/edit?usp=sharing',
+        //   target: '_blank',
+        //   label: 'Slides',
+        //   position: 'right',
+        // },
         {
           type: 'dropdown',
           label: 'About',

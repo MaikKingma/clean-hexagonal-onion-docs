@@ -110,7 +110,7 @@ class AuthorQueriesTest {
 
 ```javascript
 if (allTestsGreen == true) {
-    log.info("DONE! Let's move on to the next topic: The ACL adapter")}
+    log.info("DONE! Let's move on to the next topic: Separate the Domain Interaction Layer")}
 else{
     log.error("Shout for help!") || (git stash && git checkout 6-query-author-done)
 }
