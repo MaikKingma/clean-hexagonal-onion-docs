@@ -135,7 +135,8 @@ Inject the AuthorRepository into the AuthorServiceImpl and update the function i
 
 
 ### Validation
-Let's test your implementation. Update the AuthorCommandsTest.java with this Test:
+Let's test your implementation. Update the AuthorCommandsTest.java and replace the previously added ``register()`` test 
+with the following Test:
 
 ```java
     @BeforeEach
@@ -160,8 +161,10 @@ Let's test your implementation. Update the AuthorCommandsTest.java with this Tes
     }
 ```
 
-To not affect our runtime DB with changes we need to complete two steps before running this test suite:
-update the ``pom.xml`` with the following dependency:
+To not affect our runtime DB with changes from our unit tests, we need to complete two steps before running this test 
+suite:
+
+1. update the ``pom.xml`` with the following dependency:
 ```xml
 <dependency>
     <groupId>com.h2database</groupId>
@@ -169,7 +172,7 @@ update the ``pom.xml`` with the following dependency:
     <scope>test</scope>
 </dependency>
 ```
-and add the test config file ``src/test/resources/application.properties`` with content
+2. add the test config file ``src/test/resources/application.properties`` with content
 ```properties
 # DataSource
 spring.datasource.driver-class-name=org.h2.Driver
@@ -181,7 +184,7 @@ spring.datasource.password=sa
 spring.liquibase.change-log=classpath:db/db.changelog-master.xml
 ```
 
-Now run the test...
+Now we can finally run the test. Well done!
 
 ```javascript
 if (allTestsGreen == true) {

@@ -77,6 +77,12 @@ class AuthorCommandsTest {
 }
 ```
 
+### OPTIONAL: Run the app on localhost
+By the way, if you run the docker compose file ``./docker-compose.yml`` and start the Spring app you can also test your 
+API at runtime manually.
+Got to ``http/AuthorCommands.http`` and run the request against your localhost:8080.
+
+
 ```javascript
 if (allTestsGreen == true) {
     log.info("DONE! Let's move on to the next topic: **Persisting Data**.")}
