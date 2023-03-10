@@ -66,12 +66,12 @@ class AuthorCommandsTest {
     @Test
     void register() throws Exception {
         //given
-        var registerAuthorDTOJson = objectMapper.writeValueAsString(new RegisterAuthorDTO("firstName", "lastName"));
+        var registerAuthorPayloadJson = objectMapper.writeValueAsString(new RegisterAuthorPayload("firstName", "lastName"));
 
         //when //then
         mockMvc.perform(post("/authors/commands/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerAuthorDTOJson))
+                        .content(registerAuthorPayloadJson))
                 .andExpect(status().isAccepted());
     }
 }

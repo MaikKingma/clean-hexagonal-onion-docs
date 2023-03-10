@@ -2,26 +2,45 @@
 sidebar_position: 8
 ---
 
-# N+1 - Do it yourself
+# Do it yourself
 
-Back to school ;P . You learn the theory, then you apply it to something new.
-What would authors be without books! (Maybe bloggers, but anyways...) Remember our domain model and API spec:
+Back to school! First, you learn the theory, then you apply it to something new.
+What would authors be without books! (Maybe bloggers, but anyways...)
+
+After having completed the last chapter where we split of our domain interaction layer, we need to update our domain 
+model:
 
 ### Domain Model Diagram
-![domain-model.jpg](domain-model.jpg)
+![updated_domain_model.jpg](updated_domain_model.jpg)
 
 ### The API
-```
+In this chapter you will need to apply what you have learned so far and create two new commands in our API spec that
+will allow an author to write a book and afterwards publish it (publishing is part of the next chapter).
+```http request
 ### DONE
-POST /authors/commands/register
-GET /authors
+POST /authors/commands/register HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+  "firstName": "PLACE_YOUR_FIRST_NAME",
+  "lastName": "PLACE_YOUR_LAST_NAME"
+}
 
 ### TODO in this assignment
-POST /authors/{id}/commands/writeBook
-GET /books?title
+POST /authors/10001/commands/writeBook HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
 
-### TODO in upcoming ACL section
-POST /books/{id}/commands/publish
+{
+  "title": "PLACE_YOUR_TILE",
+  "genre": "HORROR"
+}
+
+### TODO in this assignment
+GET /books?title= HTTP/1.1
+Accept: application/json
+Host: localhost:8080
 ```
 
 ### The assignment
@@ -102,28 +121,29 @@ To not get hung up on Database evolution, here is the liquibase script you will 
 </databaseChangeLog>
 ```
 
-Let's assume we have 4 genres available: 'FANTASY','HORROR', 'CRIME', 'ROMANCE'. Make sure to add the enum in the 
+Let's assume we have 4 genres available: 'FANTASY','HORROR', 'CRIME' and 'ROMANCE'. Make sure to add the enum in the 
 code accordingly.
 
 Now try to complete the rest!
 
 ### Some things to watch our for
 
-* Remember that an entity in DDD is not the same as an entity in the DB sense. So the OneToMany and ManyToOne relation 
+* Remember that an entity in DDD is not the same as an entity in the ORM sense. So the OneToMany and ManyToOne relation 
   annotations need to be placed on the JPA data model classes only.
 
-```java
+The following code snippets might prove useful:
+``` java
     @OneToMany(mappedBy = "authorJPA", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<BookJPA> books;
 ```
 and
-```java
+``` java
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
     private AuthorJPA author;
 ```
 
-**Expert tip:** If you are stuck, maybe try some TDD with the help of the Validate paragraph?
+> **TIP:** If you are stuck, TDD can be practiced with the code from the [validate](#validate) paragraph?
 
 **GOOD LUCK!**
 
@@ -291,12 +311,12 @@ class BookQueriesTest {
 }
 ```
 
-Hope all worked out for you! Once again:
+Good job! You now know how to apply the Clean Hexagonal Onion yourself. Once again:
 
 ```javascript
 if (allTestsGreen == true) {
     log.info("DONE! Let's move on to the next topic: The ACL adapter")}
 else{
-    log.error("Shout for help!") || (git stash && git checkout 7-n+1-done)
+    log.error("Shout for help!") || (git stash && git checkout 8-do-it-yourself-done)
 }
 ```

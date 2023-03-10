@@ -24,8 +24,62 @@ We start by adding the missing package ``domaininteraction`` to the package ``eu
 
 Also, create the package ``eu/javaland/clean_hexagonal_onion/domaininteraction/author`` inside there.
 
+### Verifying what is wrong
+TDD to the rescue! Here is a test that will show you what we did wrong so far. We will use
+ArchUnit for this:
+
+Add the dependency to the ./pom.xml file:
+
+``` xml
+<!-- Test Dependencies-->
+<dependency>
+    <groupId>com.tngtech.archunit</groupId>
+    <artifactId>archunit-junit5</artifactId>
+    <version>1.0.1</version>
+    <scope>test</scope>
+</dependency>
+```
+Here is the test we add to ``src/test/java/eu/javaland/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``:
+``` java
+package eu.javaland.clean_hexagonal_onion;
+
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
+
+import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
+
+@AnalyzeClasses(packages = "eu.javaland.clean_hexagonal_onion",
+                importOptions = {ImportOption.DoNotIncludeTests.class})
+public class CleanHexagonalOnionArchitectureTest {
+
+    @ArchTest
+    static final ArchRule layer_dependencies_are_respected =
+            layeredArchitecture().consideringAllDependencies()
+
+            .layer("command").definedBy("eu.javaland.clean_hexagonal_onion.command..")
+            .layer("query").definedBy("eu.javaland.clean_hexagonal_onion.query..")
+            .layer("data").definedBy("eu.javaland.clean_hexagonal_onion.data..")
+            .layer("domain interaction").definedBy("eu.javaland.clean_hexagonal_onion.domaininteraction..")
+            .layer("domain").definedBy("eu.javaland.clean_hexagonal_onion.domain..")
+
+            .whereLayer("command").mayNotBeAccessedByAnyLayer()
+            .whereLayer("query").mayNotBeAccessedByAnyLayer()
+            .whereLayer("data").mayNotBeAccessedByAnyLayer()
+            .whereLayer("domain interaction").mayOnlyBeAccessedByLayers("command", "query", "data")
+            .whereLayer("domain").mayOnlyBeAccessedByLayers("domain interaction");
+}
+```
+> Note that ACL and Process are still missing in there. Since they are still empty packages our test would fail.
+> We will add them later on.
+
+Run the test. It will throw quite a few errors, pointing out to us the classes where we violated those
+dependency rules.
+
 ### Moving code around
-First we move the interface ``eu/javaland/clean_hexagonal_onion/domain/author/AuthorService.java``
+Let's start fixing things. First we move the interface ``eu/javaland/clean_hexagonal_onion/domain/author/AuthorService.
+java``
 to ``eu/javaland/clean_hexagonal_onion/domaininteraction/author/AuthorService.java``. Since it is essentially a port
 we defined to access our data source, it needs to reside in the domain interaction layer.
 

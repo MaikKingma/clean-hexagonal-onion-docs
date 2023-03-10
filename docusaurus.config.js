@@ -76,7 +76,7 @@ const config = {
             },
             {
               label: 'Blog',
-              href: 'https://blog.the-experts.nl/maikkingma',
+              href: 'https://maikkingma.medium.com/',
               target: '_blank',
             },
             {
