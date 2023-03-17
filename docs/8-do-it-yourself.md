@@ -157,157 +157,154 @@ Done? Let's test your implementation:
 @AutoConfigureMockMvc
 class AuthorActionCommandsTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-    @Autowired
-    private AuthorRepository authorRepository;
+  @Autowired
+  private BookRepository bookRepository;
 
-    @Autowired
-    private BookRepository bookRepository;
+  @Autowired
+  private EntityManager entityManager;
 
-    @Autowired
-    private EntityManager entityManager;
+  @BeforeEach
+  void beforeAll() {
+    entityManager.createNativeQuery("DELETE FROM author where true; DELETE FROM book where true;")
+            .executeUpdate();
+  }
 
-    @BeforeEach
-    void beforeAll() {
-        authorRepository.deleteAll();
-        bookRepository.deleteAll();
-    }
+  @Test
+  @Transactional
+  void writeBook() throws Exception {
+    // given
+    entityManager.createNativeQuery(
+                    "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
+            .setParameter(1, 1)
+            .setParameter(2, "firstName")
+            .setParameter(3, "lastName")
+            .executeUpdate();
 
-    @Test
-    @Transactional
-    void writeBook() throws Exception {
-        // given
-        entityManager.createNativeQuery(
-                "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
-                .setParameter(1, 1)
-                .setParameter(2, "firstName")
-                .setParameter(3, "lastName")
-                .executeUpdate();
-
-        var writeBookDTOJson = objectMapper.writeValueAsString(new WriteBookDTO("title", Genre.CRIME));
-        var expected = BookJPA.builder()
-                               .title("title")
-                               .genre(Genre.CRIME)
-                               .published(false)
-                               .author(AuthorJPA.builder().id(1L).build())
-                .build();
-        // when
-        mockMvc.perform(post("/authors/1/commands/writeBook")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(writeBookDTOJson))
-                .andExpect(status().isAccepted());
-        bookRepository.flush();
-        // then
-        List<BookJPA> books = bookRepository.findAll();
-        assertThat(books.size()).isEqualTo(1);
-        assertThat(books.get(0)).usingRecursiveComparison().ignoringFields("id").isEqualTo(expected);
-    }
+    var writeBookDTOJson = objectMapper.writeValueAsString(new WriteBookPayload("title", "CRIME"));
+    var expected = BookJPA.builder()
+            .title("title")
+            .genre("CRIME")
+            .published(false)
+            .author(AuthorJPA.builder().id(1L).firstName("firstName").lastName("lastName").build())
+            .build();
+    // when
+    mockMvc.perform(post("/authors/1/commands/writeBook")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(writeBookDTOJson))
+            .andExpect(status().isAccepted());
+    entityManager.flush();
+    // then
+    List<BookJPA> books = bookRepository.findAll();
+    assertThat(books.size()).isEqualTo(1);
+    assertThat(books.get(0)).usingRecursiveComparison().ignoringFields("id").isEqualTo(expected);
+  }
 }
 ```
-* the test for querying of books:
+* the test for the querying of books:
 ```java
 @SpringBootTest
 @AutoConfigureMockMvc
 class BookQueriesTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-    @Autowired
-    private BookRepository bookRepository;
+  @Autowired
+  private EntityManager entityManager;
 
-    @Autowired
-    private EntityManager entityManager;
+  @BeforeEach
+  void beforeEach() {
+    entityManager.createNativeQuery("DELETE FROM author where true; DELETE FROM book where true;")
+            .executeUpdate();
+  }
 
-    @BeforeEach
-    void beforeEach() {
-        bookRepository.deleteAll();
-        bookRepository.flush();
-    }
+  @Test
+  @Transactional
+  void shouldFindBooksWithNoQueryParam() throws Exception {
+    // given
+    entityManager.createNativeQuery(
+                    "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
+            .setParameter(1, 1)
+            .setParameter(2, "firstName")
+            .setParameter(3, "lastName")
+            .executeUpdate();
+    var book1 = BookJPA.builder()
+            .author(AuthorJPA.builder().id(1L).build())
+            .genre("HORROR")
+            .title("horror-book")
+            .build();
+    var book2 = BookJPA.builder()
+            .author(AuthorJPA.builder().id(1L).build())
+            .genre("ROMANCE")
+            .title("romance-book")
+            .build();
+    var expectedBookView1 = new BookView("horror-book", "HORROR", "firstName lastName");
+    var expectedBookView2 = new BookView("romance-book", "ROMANCE", "firstName lastName");
 
-    @Test
-    @Transactional
-    void shouldFindBooksWithNoQueryParam() throws Exception {
-        // given
-        entityManager.createNativeQuery(
-                        "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
-                .setParameter(1, 1)
-                .setParameter(2, "firstName")
-                .setParameter(3, "lastName")
-                .executeUpdate();
-        var book1 = BookJPA.builder()
-                .author(AuthorJPA.builder().id(1L).build())
-                .genre(Genre.HORROR)
-                .title("horror-book")
-                .build();
-        var book2 = BookJPA.builder()
-                .author(AuthorJPA.builder().id(1L).build())
-                .genre(Genre.ROMANCE)
-                .title("romance-book")
-                .build();
-        var expectedBookView1 = new BookView("horror-book", "firstName lastName", null);
-        var expectedBookView2 = new BookView("romance-book", "firstName lastName", null);
+    entityManager.persist(book1);
+    entityManager.persist(book2);
+    entityManager.flush();
+    // when
+    MvcResult result = mockMvc.perform(get("/books")
+                    .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
+    // then
+    var resultingBookViews = objectMapper.readValue(
+            result.getResponse().getContentAsString(), new TypeReference<List<BookView>>() {
+            });
+    assertThat(resultingBookViews).hasSize(2);
+    assertThat(resultingBookViews).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
+            .containsExactlyInAnyOrder(expectedBookView1, expectedBookView2);
+  }
 
-        bookRepository.saveAll(List.of(book1, book2));
-        bookRepository.flush();
-        // when
-        MvcResult result = mockMvc.perform(get("/books")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-        // then
-        var resultingBookViews = objectMapper.readValue(
-                result.getResponse().getContentAsString(), new TypeReference<List<BookView>>() {});
-        assertThat(resultingBookViews).hasSize(2);
-        assertThat(resultingBookViews).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
-                .containsExactlyInAnyOrder(expectedBookView1, expectedBookView2);
-    }
+  @Test
+  @Transactional
+  void shouldFindBooksFilteredByQueryParamTitle() throws Exception {
+    // given
+    entityManager.createNativeQuery(
+                    "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
+            .setParameter(1, 1)
+            .setParameter(2, "firstName")
+            .setParameter(3, "lastName")
+            .executeUpdate();
+    var book1 = BookJPA.builder()
+            .author(AuthorJPA.builder().id(1L).build())
+            .genre("HORROR")
+            .title("horror-book")
+            .build();
+    var book2 = BookJPA.builder()
+            .author(AuthorJPA.builder().id(1L).build())
+            .genre("ROMANCE")
+            .title("romance-book")
+            .build();
+    var expectedBookView = new BookView("horror-book", "HORROR", "firstName lastName");
 
-    @Test
-    @Transactional
-    void shouldFindBooksFilteredByQueryParamTitle() throws Exception {
-        // given
-        entityManager.createNativeQuery(
-                        "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
-                .setParameter(1, 1)
-                .setParameter(2, "firstName")
-                .setParameter(3, "lastName")
-                .executeUpdate();
-        var book1 = BookJPA.builder()
-                .author(AuthorJPA.builder().id(1L).build())
-                .genre(Genre.HORROR)
-                .title("horror-book")
-                .build();
-        var book2 = BookJPA.builder()
-                .author(AuthorJPA.builder().id(1L).build())
-                .genre(Genre.ROMANCE)
-                .title("romance-book")
-                .build();
-        var expectedBookView = new BookView("horror-book", "firstName lastName", null);
-
-        bookRepository.saveAll(List.of(book1, book2));
-        bookRepository.flush();
-        // when
-        MvcResult result = mockMvc.perform(get("/books")
+    entityManager.persist(book1);
+    entityManager.persist(book2);
+    entityManager.flush();
+    // when
+    MvcResult result = mockMvc.perform(get("/books")
                     .accept(MediaType.APPLICATION_JSON)
                     .queryParam("title", "orror-"))
-                .andExpect(status().isOk())
-                .andReturn();
-        // then
-        var resultingBookViews = objectMapper.readValue(
-                result.getResponse().getContentAsString(), new TypeReference<List<BookView>>() {});
-        assertThat(resultingBookViews).hasSize(1);
-        assertThat(resultingBookViews).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
-                .containsExactly(expectedBookView);
-    }
+            .andExpect(status().isOk())
+            .andReturn();
+    // then
+    var resultingBookViews = objectMapper.readValue(
+            result.getResponse().getContentAsString(), new TypeReference<List<BookView>>() { });
+    assertThat(resultingBookViews).hasSize(1);
+    assertThat(resultingBookViews).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
+            .containsExactly(expectedBookView);
+  }
 }
 ```
 

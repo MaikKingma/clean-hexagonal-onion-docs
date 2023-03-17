@@ -42,18 +42,10 @@ This chapter will be a bit less guided in terms of code snippets. Let's see how 
   the following view model that our query will return:
 
 ```java
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class AuthorView {
+public record AuthorView (Long id, String name) {
   public AuthorView(Author author) {
-    this.id = author.getId();
-    this.name = author.getFullName();
+    this(author.getId(), author.getFullName());
   }
-
-  Long id;
-  String name;
 }
 ```
 
@@ -74,37 +66,40 @@ Let's test your implementation:
 @AutoConfigureMockMvc
 class AuthorQueriesTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-    @Autowired
-    private AuthorRepository authorRepository;
+  @Autowired
+  private EntityManager entityManager;
 
-    @BeforeEach
-    void beforeAll() {
-        authorRepository.deleteAll();
-    }
+  @BeforeEach
+  void beforeAll() {
+    entityManager.createNativeQuery("DELETE FROM author WHERE true;");
+  }
 
-    @Test
-    void getAll() throws Exception {
-        // given
-        var authorJPA = AuthorJPA.builder().firstName("firstName").lastName("lastName").build();
-        authorRepository.save(authorJPA);
-        authorRepository.flush();
-        AuthorView expected = new AuthorView(Author.createAuthor("firstName", "lastName"));
-        // when then
-        MvcResult result = mockMvc.perform(get("/authors")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
+  @Test
+  @Transactional
+  void getAll() throws Exception {
+    // given
+    var authorJPA = AuthorJPA.builder().firstName("firstName").lastName("lastName").build();
+    entityManager.persist(authorJPA);
+    entityManager.flush();
+    AuthorView expected = new AuthorView(Author.createAuthor("firstName", "lastName"));
+    // when then
+    MvcResult result = mockMvc.perform(get("/authors")
+                    .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
 
-        var resultingAuthorViews = objectMapper.readValue(
-                result.getResponse().getContentAsString(), new TypeReference<List<AuthorView>>() {});
-        assertThat(resultingAuthorViews).usingRecursiveFieldByFieldElementComparatorIgnoringFields("id").containsExactly(expected);
-    }
+    var resultingAuthorViews = objectMapper.readValue(
+            result.getResponse().getContentAsString(), new TypeReference<List<AuthorView>>() { });
+    assertThat(resultingAuthorViews)
+            .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
+            .containsExactly(expected);
+  }
 }
 ```
 
