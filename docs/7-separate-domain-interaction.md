@@ -93,7 +93,7 @@ public interface AuthorDataService {
 }
 ```
 
-> Notice that we renamed the function registerAuthor to save here since it better describes what we are trying 
+> **Notice** that we renamed the function registerAuthor to save here since it better describes what we are trying 
 > to achieve here. We also removed any reference to the domain core in our port and instead introduced a AuthorDTO 
 > (data transfer object) that will function as a mapping layer between the domain core and the external adapters.
 
@@ -164,7 +164,7 @@ class AuthorFlowTest {
     }
 }
 ```
-> Notice that we introduced an AuthorDTO object. This is the pattern we use for isolating our domain core from the
+> **Notice** that we introduced an AuthorDTO object. This is the pattern we use for isolating our domain core from the
 > outside world. 
 
 Once you are done implementing, we will need to update the command and query controllers. They should not directly access

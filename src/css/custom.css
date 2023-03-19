@@ -80,3 +80,9 @@ main {
 aside {
   background: rgb(39,41,47);
 }
+
+blockquote {
+  background: rgb(39,41,47, 0.7);
+  color: #ff710b;
+  padding: 15px 15px;
+}

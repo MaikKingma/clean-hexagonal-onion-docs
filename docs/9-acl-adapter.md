@@ -4,12 +4,13 @@ sidebar_position: 9
 
 # The Anti-Corruption-Layer Adapter (ACL)
 
-We now want to publish a book. But in order to do so we need to know which publishers are even available to do so.
-We will assume for the sake of the exercise that we need to retrieve that information from an external system.
+We now want to publish an author's book. In order to do so, we need to know which publishers are even available to 
+do so. We will assume for the sake of the exercise that we need to retrieve that information from an external system 
+outside our bounded context.
 
-### The "third party" service
-Please check out the project https://github.com/MaikKingma/publisher-service.
-It is another Spring service you will be able to retrieve the Publisher data from via the following API call:
+### The "third-party" service
+Please check out the [publisher-service](https://github.com/MaikKingma/publisher-service).
+It is another Spring service you will be able to retrieve the Publisher data from. The API specs are as follows:
 
 ```http request
 ### Get authors
@@ -18,8 +19,9 @@ Host: localhost:8081
 Accept: application/json
 ```
 ### Implementation
-In order to protect our domain from corruption and limit the service coupling to lose coupling only we introduce a 
-wrapping API endpoint of our own in our clean-hexagonal-onion-service as follows:
+In order to protect our domain core from (data) corruption (and our application in general) and limit the service 
+coupling to lose coupling only, we introduce a wrapping Rest controller of our own in our service 
+as follows:
 
 ```http request
 ### Get authors
@@ -37,7 +39,7 @@ Hence, implement our new API endpoint in such a way that we receive the response
 [
   {
     "id": "55699ecc-42dc-42cf-8290-1207655140e2",
-    "name": "the/experts"
+    "name": "the/experts."
   },
   {
     "id": "5e659183-411c-42af-8bed-2225a2165c59",
@@ -53,21 +55,22 @@ Hence, implement our new API endpoint in such a way that we receive the response
   }
 ]
 ```
-We have created a Query adapter in section 6. If you want more hints.... you need to create a class 
+We have already created a Query adapter once in section 6. If you want more hints.... you need to create a class 
 ``/query/publisher/PublisherQuery.java`` which contains a GetMapping for ``/publishers``. Inject the 
-``PublisherService.java`` and call the method to retrieve all publishers via the ACL adapter.
+``PublisherAppService.java`` and call the method to retrieve all publishers via the ACL adapter.
 
 Additionally, we will need to introduce the ``Publisher.java``. As described in the domain model it will be a 
 value object as it will have no lifecycle of its own within our domain (the id on the view model might be misleading,
-in the sense that DDD states that VOs have no ID. That ID however is only a technical identifier of another bounded 
-context for us. It is not an ID in our context).
+in the sense that DDD states that value objects have no ID. That ID however is only a technical identifier of another 
+bounded context for us. It is not an ID in our context and the publisher has no further life cycle or state of its 
+own in our system).
 
-The data we populate the response with will come from the Publisher service API.
-For that you will need to introduce a new domain service ``/domain/publisher/PublisherService.java``.
-Since we are implementing an interface contract with another service we add the implementation for that service in 
-the acl adapter layer, ``/acl/publisher/PublisherServiceImpl.java``.
+The data we populate the response with will come from the Publisher-service API.
+As mentioned before, you will need to introduce a new application service 
+``/domaininteraction/publisher/PublisherAppService.java``. We add the implementation for that service in the ACL
+adapter layer, ``/acl/publisher/PublisherAppServiceImpl.java``.
 
-For the REST call execution you may want to consider this code snippet:
+> **Hint:** For the REST call execution you may want to consider this code snippet:
 ```java
 new RestTemplate().getForObject(uri, PublisherDTO[].class);
 ```
@@ -106,9 +109,11 @@ and also add these dependencies (we need no test scope on the last two as we wil
 ```
 
 ```java
+package eu.javaland.clean_hexagonal_onion.query.publisher;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nl.theexperts.clean_hexagonal_onion_service.domain.publisher.Publisher;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.publisher.PublisherDTO;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.Header;
@@ -149,31 +154,23 @@ class PublisherQueryTest {
     void shouldGetAllPublishers() throws Exception {
         configureMockGetAllPublishers();
 
-        var expectedPublisher1 = Publisher.builder()
-                .id(UUID.fromString("55699ecc-42dc-42cf-8290-1207655140e2"))
-                .name("the/experts")
-                .build();
+        var expectedPublisher1 =
+                new PublisherDTO(UUID.fromString("55699ecc-42dc-42cf-8290-1207655140e2"), "the/experts");
         var expectedPublisher2 =
-                Publisher.builder()
-                        .id(UUID.fromString("5e659183-411c-42af-8bed-2225a2165c59"))
-                        .name("Heise")
-                        .build();
+                new PublisherDTO(UUID.fromString("5e659183-411c-42af-8bed-2225a2165c59"), "Heise");
         var expectedPublisher3 =
-                Publisher.builder()
-                        .id(UUID.fromString("8fb2e701-b086-415c-bf16-1b3096d355df"))
-                        .name("PubIT")
-                        .build();
+                new PublisherDTO(UUID.fromString("8fb2e701-b086-415c-bf16-1b3096d355df"), "PubIT");
 
         // when
         MvcResult result = mockMvc.perform(get("/publishers").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
         // then
-        var resultingBookViews = objectMapper.readValue(
-                result.getResponse().getContentAsString(), new TypeReference<List<Publisher>>() {
+        var publisherList = objectMapper.readValue(
+                result.getResponse().getContentAsString(), new TypeReference<List<PublisherDTO>>() {
                 });
-        assertThat(resultingBookViews).hasSize(3);
-        assertThat(resultingBookViews).usingRecursiveFieldByFieldElementComparator()
+        assertThat(publisherList).hasSize(3);
+        assertThat(publisherList).usingRecursiveFieldByFieldElementComparator()
                 .containsExactlyInAnyOrder(expectedPublisher1, expectedPublisher2, expectedPublisher3);
     }
 
@@ -216,12 +213,14 @@ class PublisherQueryTest {
 }
 ```
 
-Give it a try!
+> **Hint:** also, do not forget to give our ArchUnit test a run. Will it still pass?
+
+Great job also finishing this chapter. In case you had some trouble, feel free to check out the branch below.
 
 ```javascript
 if (allTestsGreen == true) {
     log.info("DONE! Let's move on to the next topic: The ACL adapter")}
 else{
-    log.error("Shout for help!") || (git stash && git checkout 8-acl-adapter-done)
+    log.error("Shout for help!") || (git stash && git checkout 9-acl-adapter-done)
 }
 ```

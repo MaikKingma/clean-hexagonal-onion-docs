@@ -22,8 +22,8 @@ Content-Type: application/json
 This endpoint should create an Author from the given Data Transfer Object (DTO) (or payload) and call the register
 function of an author on the domain interaction layer service. The standard response should be empty with status code 202.
 
-> Tip: You can add the above snippet in a file ``./http/AuthorCommands.http`` which allows you to execute the request
-> from inside your IDE (if supported, IntelliJ does).
+> **Tip:** You can add the above snippet in a file ``./http/AuthorCommands.http`` which allows you to execute the 
+> request from inside your IDE (if supported, IntelliJ does).
 
 ### Domain Core
 According to the domain model we need to create the class ```/domain/author/Author.java``` in our domain package. To 

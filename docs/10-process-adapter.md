@@ -19,7 +19,7 @@ Host: localhost:8080
 Content-Type: application/json
 
 {
-  "publisherId": "6b4ca9c9-b3ae-4130-b3f8-2da873c3940e"
+  "publisherId": "80553ae1-2ef8-4adf-8fa8-d551684a9ea3"
 }
 ```
 The behaviour of this endpoint should comply with the following functional requirements:
@@ -28,14 +28,15 @@ The behaviour of this endpoint should comply with the following functional requi
 * We want the publishing to happen asynchronous, i.e. our command should simply return that it accepted the 
   publishing request, and it will be passed on for further processing. (Eventual Consistency).
 
-We achieve this passing for further processing by publishing a domain event (reference https://www.baeldung.com/spring-data-ddd#use-abstractaggregateroot-template)
+We achieve this passing on for further processing by publishing a domain event, you can find extra reference [here]
+(https://bit.ly/3Fs9Cy4).
 
 While it looks easy at first sight, we need to invest a little more coding effort than Baeldung because we 
 segregated the data entity from the actual domain aggregate.
 
-### 1. Task: Implement another ACL adapter.
-First things first: in order to validate the existence of a publisher by Id the publisher service from the previous
-section exposes this endpoint:
+### 1. Task: Implement the Publisher ACL adapter.
+First things first: in order to validate the existence of a publisher by id, the third party publisher service from the 
+previous section exposes the following endpoint:
 
 ```http request
 ### Get authors
@@ -43,9 +44,16 @@ GET /publishers/{id} HTTP/1.1
 Host: localhost:8081
 Accept: application/json
 ```
-implement this in our ACL adapter
-### 2. Task: Implement Book Command
-implement our new book commands endpoint and for now only log the response of the getPublisherById call
+implement this in our ACL adapter. We need to expose some sort of interface to our later book command REST controller 
+that we can inject.
+
+> **Hint:** Consider our application & domain service pattern. Since Publishers do not have a life cycle within our 
+> context, which would you choose?
+
+### 2. Task: Implement the Book Command
+implement our new book commands endpoint and for now only log the response of the getPublisherById call you 
+implemented in step 1.
+
 ```http request
 POST /books/{id}/commands/publish HTTP/1.1
 Host: localhost:8080
@@ -55,30 +63,111 @@ Content-Type: application/json
   "publisherId": "6b4ca9c9-b3ae-4130-b3f8-2da873c3940e"
 }
 ```
-### 3. Task: Get the Book by ID
-Retrieve the book corresponding to the ID form the path parameter
-### 4. Task: Allow book publishing
-No publishing without a publisher. Hence, publishing should only be triggerable from within a publisher class. Add 
-this function to ``Publisher.java``
+
+> **Hint:** You can always verify that you used the correct patterns by running our 
+> ``eu/javaland/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``.
+
+### 3. Task: Implement the flow
+We now have a publisher that we want to publish with. Next, we need to retrieve the book corresponding to the ID form 
+the path parameter, check that it exists, then in step 4, register it for publishing.
+
+Following our flow pattern, we introduce the class 
+``eu/javaland/clean_hexagonal_onion/domaininteraction/publisher/PublisherFlow.java``. You may ask at this point, why 
+a PublisherFlow and not a BookFLow. This is a bit of a taste question. My reasoning is that there would be no 
+publishing without a publisher existing, so I chose that flow. But you could equally reason, that you can only 
+publish a book that exists. So this is eventually up to the architect to decide. Both are correct.
+
+Here is a test for some TDD:
 ```java
-public void publishBook(Book book) {
-    book.requestPublishing(id);
+@ExtendWith(MockitoExtension.class)
+class PublisherFlowTest {
+
+    @Mock
+    private PublisherAppService publisherAppService;
+
+    @Mock
+    private BookDataService bookDataService;
+
+    @InjectMocks
+    private PublisherFlow publisherFlow;
+
+    @Test
+    void publishBook_success() {
+        // given
+        UUID publisherId = UUID.randomUUID();
+        var authorDTO = new AuthorDTO(1L, "firstName", "lastName");
+        var bookDTO = new BookDTO(1L, authorDTO, "title", "description", null, false, null);
+        var publisherDTO = new PublisherDTO(publisherId,
+                "publisherName");
+        when(publisherAppService.getPublisherById(publisherId.toString())).thenReturn(publisherDTO);
+        when(bookDataService.findById(1L)).thenReturn(bookDTO);
+        // when
+        publisherFlow.publishBook(1L, publisherId.toString());
+        // then
+        ArgumentCaptor<BookDTO> argumentCaptor = ArgumentCaptor.forClass(BookDTO.class);
+        verify(bookDataService, times(1)).save(argumentCaptor.capture());
+        var capturedArg = argumentCaptor.getValue();
+        assertThat(capturedArg.publisherId()).isEqualTo(publisherId);
+        assertThat(capturedArg.isPublished()).isFalse();
+    }
+
+    @Test
+    void publishBook_failure_publisherNotFound() {
+        // given
+        UUID publisherId = UUID.randomUUID();
+        when(publisherAppService.getPublisherById(publisherId.toString())).thenThrow(
+                new PublisherAppService.PublisherNotFoundException("Publisher not found!"));
+        // when then
+        assertThrows(PublisherAppService.PublisherNotFoundException.class, () -> publisherFlow.publishBook(1L,
+                publisherId.toString()));
+    }
+
+    @Test
+    void publishBook_failure_bookNotFound() {
+        // given
+        UUID publisherId = UUID.randomUUID();
+        var publisherDTO = new PublisherDTO(publisherId,
+                "publisherName");
+        when(publisherAppService.getPublisherById(publisherId.toString())).thenReturn(publisherDTO);
+        when(bookDataService.findById(1L)).thenThrow(new BookDataService.BookNotFoundException("Book not found!"));
+        // when then
+        assertThrows(BookDataService.BookNotFoundException.class, () -> publisherFlow.publishBook(1L,
+                publisherId.toString()));
+    }
+
+    @Test
+    void publishBook_failure_bookAlreadyInPublishing() {
+        // given
+        UUID publisherId = UUID.randomUUID();
+        var authorDTO = new AuthorDTO(1L, "firstName", "lastName");
+        var bookDTO = new BookDTO(1L, authorDTO, "title", "description", UUID.randomUUID(), false, null,
+                new ArrayList<>());
+        var publisherDTO = new PublisherDTO(publisherId,
+                "publisherName");
+        when(publisherAppService.getPublisherById(publisherId.toString())).thenReturn(publisherDTO);
+        when(bookDataService.findById(1L)).thenReturn(bookDTO);
+        // when
+        assertThrows(PublisherFlow.BookAlreadyInPublishingException.class, () -> publisherFlow.publishBook(1L,
+                publisherId.toString()));
+    }
 }
 ```
-### 5. Task: Update the domain and data source
-We want to allow a publishing request and the publishing of domain events.
-To be bale to handle domain events we need a new dependency in our ``pom.xml``:
+
+### 5. Task: Implement the domain event
+We want to allow a publishing request and, since we aim for eventual consistency, the publishing of a related domain 
+event, that can be consumed later on by our process adapter.
+To be able to handle domain events we need a new dependency in our ``pom.xml``:
 ```xml
 <dependency>
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-commons</artifactId>
-    <version>2.7.2</version>
 </dependency>
 ```
 
-The challenge of this task is to actually register domain events on the domain, but then also map them to 
-the actual JPA entity which will eventually be persisted by the Repo, which in turn will trigger the handling of domain events in 
-``AbstractAggregateRoot.java``.
+The challenge of this task is to actually register domain events on the domain, but then also propagate them to 
+the actual JPA entity which will eventually be persisted by the Repository, which in turn will trigger the handling of 
+domain events in the ``AbstractAggregateRoot.java``. If we send domain events from the domain already, we 
+could encounter a chicken and egg problem, since the domain event would be sent before the JPA entity is persisted.
 
 Here are some useful snippets. Can you place them in the correct places?
 ```java
@@ -105,16 +194,57 @@ public class BookJPA extends AbstractAggregateRoot<BookJPA> {
     }
 }
 ```
+
+In case of our domain events, we will slightly loosen our architecture rules sets and allow the process adapter to 
+know about our domain events. This is because we want to be able to consume them in the process adapter. THe same 
+goes for the DomainEvent.class in the data adapter. JPA needs to know about our domain events to be able to fire the 
+events when the JPA entity is persisted. Here is an updated ArchUnit test:
+```java
+@AnalyzeClasses(packages = "eu.javaland.clean_hexagonal_onion", importOptions = {ImportOption.DoNotIncludeTests.class})
+public class CleanHexagonalOnionArchitectureTest {
+
+    @ArchTest
+    static final ArchRule layer_dependencies_are_respected =
+            layeredArchitecture().consideringAllDependencies()
+
+                    .layer("command").definedBy("eu.javaland.clean_hexagonal_onion.command..")
+                    .layer("query").definedBy("eu.javaland.clean_hexagonal_onion.query..")
+                    .layer("data").definedBy("eu.javaland.clean_hexagonal_onion.data..")
+                    .layer("acl").definedBy("eu.javaland.clean_hexagonal_onion.acl..")
+                    .layer("process").definedBy("eu.javaland.clean_hexagonal_onion.process..")
+                    .layer("domain interaction").definedBy("eu.javaland.clean_hexagonal_onion.domaininteraction..")
+                    .layer("domain").definedBy("eu.javaland.clean_hexagonal_onion.domain..")
+
+                    .whereLayer("command").mayNotBeAccessedByAnyLayer()
+                    .whereLayer("query").mayNotBeAccessedByAnyLayer()
+                    .whereLayer("data").mayNotBeAccessedByAnyLayer()
+                    .whereLayer("acl").mayNotBeAccessedByAnyLayer()
+                    .whereLayer("process").mayNotBeAccessedByAnyLayer()
+                    .whereLayer("domain interaction").mayOnlyBeAccessedByLayers("command", "query", "data", "acl", "process")
+                    .whereLayer("domain").mayOnlyBeAccessedByLayers("domain interaction")
+                    // we will ignore the Domain Event dependencies from the process layer to the domain layer
+                    // We are eventually trying to solve complexity, not add to it. Adding another layer to solve
+                    // this would be overkill and overcomplicate things
+                    .ignoreDependency(EventProcessor.class, Book.RequestPublishingEvent.class)
+                    .ignoreDependency(PublishBookDelegate.class, Book.RequestPublishingEvent.class)
+                    .ignoreDependency(BookJPA.class, DomainEvent.class)
+            ;
+}
+```
+
+> Some classes in this test are not yet implemented. We will do that in the next tasks
+
 In the class ``Book.java`` we need to implement the method requestPublishing(id: UUID) which we previously referenced in 
 task 4.
 ```java
     public void requestPublishing(UUID publisherId) {
-        // TODO assign the publisherID
-        // TODO and register a domain event
+        // TODO assign the publisherID to the book, in our business logic this means that the book is now in the 
+        // process of being published
+        // TODO create a domain event and add it to the domainEvents list
     }
 ```
-Having done all that the ``AbstractAggregateRoot`` will do the publishing for us. So on to the next task: we need to 
-be able to consume these events:
+Having done all that, the ``AbstractAggregateRoot`` will do the publishing of the domain events for us at the moment 
+of object persistence. So on to the next task: we need to be able to consume these events in the process adapter.
 
 ### 6. Task: Consume the published domain event.
 
@@ -146,6 +276,9 @@ public class EventProcessor {
     }
 }
 ```
+> **Hint:** TransactionalEventListener is a Spring feature that allows you to listen to events that are published within a
+> transaction. This is useful for publishing events that are triggered by a command. The event is only published if
+> the transaction is committed successfully. If the transaction is rolled back, the event is not published.
 
 This implementation will allow for the domain events on a JPA entity to be processed after the transaction was 
 committed.
@@ -195,9 +328,6 @@ Returns:
   "isbn": "ISBN-3895b77d-ee27-40de-9b08-bf24fe2a013a"
 }
 ```
-This is our most complex change yet so here is an overview of files you need to somehow touch along the way:
-![process-adapter-files.png](process-adapter-files.png)
-
 
 ### Validate
 
@@ -206,6 +336,9 @@ Let's test your implementation:
 Testing the endpoint:
 ```java
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.Header;
@@ -215,10 +348,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.json.Json;
-import javax.persistence.EntityManager;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -233,97 +364,105 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class BookCommandsTest {
 
-    private static final Long BOOK_ID = 1L;
-    private static final Long AUTHOR_ID = 2L;
+  private static final Long BOOK_ID = 1L;
+  private static final Long AUTHOR_ID = 2L;
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired
+  private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-    @Autowired
-    private EntityManager entityManager;
+  @Autowired
+  private EntityManager entityManager;
 
-    private MockServerClient mockServerClient;
+  private MockServerClient mockServerClient;
 
-    @Test
-    @Transactional
-    void publishBook() throws Exception {
-        UUID publisherUUID = UUID.randomUUID();
-        configureMockGetPublisherById(publisherUUID.toString());
-        entityManager.createNativeQuery(
-                        "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
-                .setParameter(1, AUTHOR_ID)
-                .setParameter(2, "firstName")
-                .setParameter(3, "lastName")
-                .executeUpdate();
+  @BeforeEach
+  void beforeAll() {
+    entityManager.createNativeQuery("DELETE FROM author where true; DELETE FROM book where true;")
+            .executeUpdate();
+  }
 
-        entityManager.createNativeQuery(
-                        "INSERT INTO book (id, title, author_id, genre, published, publisher_id, isbn) " +
-                                "VALUES (?,?,?,?,?,?,?)")
-                .setParameter(1, BOOK_ID)
-                .setParameter(2, "title")
-                .setParameter(3, AUTHOR_ID)
-                .setParameter(4, "HORROR")
-                .setParameter(5, false)
-                .setParameter(6, null)
-                .setParameter(7, null)
-                .executeUpdate();
+  @Test
+  @Transactional
+  void publishBook() throws Exception {
+    // given
+    UUID publisherUUID = UUID.randomUUID();
+    configureMockGetPublisherById(publisherUUID.toString());
+    entityManager.createNativeQuery(
+                    "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
+            .setParameter(1, AUTHOR_ID)
+            .setParameter(2, "firstName")
+            .setParameter(3, "lastName")
+            .executeUpdate();
 
-        entityManager.flush();
+    entityManager.createNativeQuery(
+                    "INSERT INTO book (id, title, author_id, genre, published, publisher_id, isbn) " +
+                            "VALUES (?,?,?,?,?,?,?)")
+            .setParameter(1, BOOK_ID)
+            .setParameter(2, "title")
+            .setParameter(3, AUTHOR_ID)
+            .setParameter(4, "HORROR")
+            .setParameter(5, false)
+            .setParameter(6, null)
+            .setParameter(7, null)
+            .executeUpdate();
 
-        var requestPublishingDTO = objectMapper.writeValueAsString(new PublishBookDTO(publisherUUID));
-        // when
-        mockMvc.perform(post(String.format("/books/%d/commands/publish", BOOK_ID))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestPublishingDTO))
-                .andExpect(status().isAccepted());
-    }
+    entityManager.flush();
 
-    private void configureMockGetPublisherById(String publisherId) {
-        var responseBody = Json.createObjectBuilder()
-                        .add("id", publisherId)
-                        .add("name", "the/experts")
-                        .add("taxNumber", "VAT12345")
-                        .add("numberOfEmployees", 30)
-                        .add("yearlyRevenueInMillions", 99)
-                        .add("amountOfBooksPublished", 20)
-                        .build().toString();
+    var publishBookPayload = objectMapper.writeValueAsString(new PublishBookPayload(publisherUUID.toString()));
+    // when
+    mockMvc.perform(post(String.format("/books/%d/commands/publish", BOOK_ID))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(publishBookPayload))
+            .andExpect(status().isAccepted());
+  }
 
-        mockServerClient.when(request().withMethod("GET").withPath("/publishers/" + publisherId), exactly(1)).respond(
-                response()
-                        .withStatusCode(200)
-                        .withHeaders(new Header("Content-Type", "application/json; charset=utf-8"))
-                        .withBody(responseBody)
-                        .withDelay(TimeUnit.SECONDS,1)
-        );
-    }
+  private void configureMockGetPublisherById(String publisherId) {
+    var responseBody = Json.createObjectBuilder()
+            .add("id", publisherId)
+            .add("name", "the/experts")
+            .add("taxNumber", "VAT12345")
+            .add("numberOfEmployees", 30)
+            .add("yearlyRevenueInMillions", 99)
+            .add("amountOfBooksPublished", 20)
+            .build().toString();
+
+    mockServerClient.when(request().withMethod("GET").withPath("/publishers/" + publisherId), exactly(1)).respond(
+            response()
+                    .withStatusCode(200)
+                    .withHeaders(new Header("Content-Type", "application/json; charset=utf-8"))
+                    .withBody(responseBody)
+                    .withDelay(TimeUnit.SECONDS,1)
+    );
+  }
 }
 ```
-Testing the event publishing (we need a helper class for this one):
-``src/test/.../domain/book/TestEventHandler.java``
-```java
-import nl.theexperts.clean_hexagonal_onion_service.process.DomainEvent;
-import org.springframework.transaction.event.TransactionalEventListener;
+Testing the event publishing:
+ ``src/test/java/eu/javaland/clean_hexagonal_onion/data/book/BookJPATest.java``
 
-interface TestEventHandler {
-    @TransactionalEventListener()
-    void handleEvent(DomainEvent event);
-
-}
-```
- ``src/test/.../domain/book/BookTest.java``
+> **Note:** We are wiring the actual repositories in this test scenario. We need them to handle the transactions
+> correctly for us.
+  
 ```java
-import nl.theexperts.clean_hexagonal_onion_service.datasource.author.AuthorRepository;
-import nl.theexperts.clean_hexagonal_onion_service.domain.author.Author;
-import nl.theexperts.clean_hexagonal_onion_service.domain.author.AuthorService;
+import eu.javaland.clean_hexagonal_onion.data.author.AuthorJPA;
+import eu.javaland.clean_hexagonal_onion.data.author.AuthorRepository;
+import eu.javaland.clean_hexagonal_onion.domain.book.Book;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.author.AuthorDTO;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDTO;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDataService;
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.times;
@@ -331,49 +470,54 @@ import static org.mockito.Mockito.verify;
 
 @SpringJUnitConfig
 @SpringBootTest
-class BookTest {
+class BookJPATest {
 
   @MockBean
   private TestEventHandler eventHandler;
 
   @Autowired
-  private BookService bookService;
-
-  @Autowired
-  private AuthorService authorService;
-
-  @Autowired
   private AuthorRepository authorRepository;
 
-  @Test
-  void shouldPublishEventOnSavingAggregate() {
-    var author = Author.builder().firstName("first").lastName("last").build();
-    authorService.registerAuthor(author);
-    authorRepository.flush();
+  @Autowired
+  private BookRepository bookRepository;
 
-    var persistedAuthor = authorService.findAll().get(0);
+  @Autowired
+  private BookDataService bookDataService;
 
-    var book = Book.builder().id(1L).author(persistedAuthor).published(false).genre(Genre.HORROR).title("title").build();
-    UUID publisherId = UUID.randomUUID();
-    book.requestPublishing(publisherId);
-    bookService.storeManuscript(book);
-    verify(eventHandler, times(1)).handleEvent(new Book.RequestPublishingEvent(1L, publisherId));
+  @Autowired
+  private EntityManager entityManager;
+
+  @BeforeEach
+  void beforeAll() {
+    authorRepository.deleteAll();
+    bookRepository.deleteAll();
   }
 
   @Test
-  void shouldPublishEventOnSavingAggregateOnlyOnce() {
-    var author = Author.builder().firstName("first").lastName("last").build();
-    authorService.registerAuthor(author);
-    authorRepository.flush();
+  void shouldPublishEventOnSavingAggregate() {
+    var authorJPA = AuthorJPA.builder().firstName("first").lastName("last").build();
+    authorRepository.save(authorJPA);
+    authorJPA = authorRepository.findAll().get(0);
 
-    var persistedAuthor = authorService.findAll().get(0);
-
-    var book = Book.builder().id(1L).author(persistedAuthor).published(false).genre(Genre.HORROR).title("title").build();
     UUID publisherId = UUID.randomUUID();
-    book.requestPublishing(publisherId);
-    bookService.storeManuscript(book);
-    bookService.storeManuscript(book);
-    verify(eventHandler, times(1)).handleEvent(new Book.RequestPublishingEvent(1L, publisherId));
+    AuthorDTO authorDTO = new AuthorDTO(authorJPA.getId(), authorJPA.getFirstName(),
+            authorJPA.getLastName());
+    var bookDTO = new BookDTO(1L, authorDTO, "Title"
+            , "Horror",
+            publisherId,
+            false,
+            null, List.of(new Book.RequestPublishingEvent(1L, publisherId)));
+    // when
+    bookDataService.save(bookDTO);
+    // then
+    ArgumentCaptor<Book.RequestPublishingEvent> argumentCaptor = ArgumentCaptor.forClass(Book.RequestPublishingEvent.class);
+    verify(eventHandler, times(1)).handleEvent(argumentCaptor.capture());
+  }
+
+  interface TestEventHandler {
+    @TransactionalEventListener()
+    void handleEvent(Book.RequestPublishingEvent event);
+
   }
 }
 ```
@@ -414,14 +558,13 @@ class EventProcessorTest {
 ```
 Testing the delegate and ACL interaction in ``src/test/.../process/book/PublishBookDelegateTest.java``:
 ```java
-import nl.theexperts.clean_hexagonal_onion_service.domain.author.Author;
-import nl.theexperts.clean_hexagonal_onion_service.domain.author.AuthorService;
-import nl.theexperts.clean_hexagonal_onion_service.domain.book.Book;
-import nl.theexperts.clean_hexagonal_onion_service.domain.book.BookService;
-import nl.theexperts.clean_hexagonal_onion_service.domain.book.Genre;
-import nl.theexperts.clean_hexagonal_onion_service.domain.publisher.PublisherService;
+import eu.javaland.clean_hexagonal_onion.domain.book.Book;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDTO;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDataService;
+import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookFlow;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.Header;
 import org.mockserver.springtest.MockServerTest;
@@ -432,9 +575,7 @@ import javax.json.Json;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -443,65 +584,83 @@ import static org.mockserver.model.HttpResponse.response;
 @SpringBootTest
 class PublishBookDelegateTest {
 
-  private static final Long BOOK_ID = 1L;
-  private static final Long AUTHOR_ID = 2L;
+    private static final Long BOOK_ID = 1L;
+    private static final Long AUTHOR_ID = 2L;
 
-  @Mock
-  private AuthorService authorService;
+    @Autowired
+    private BookFlow bookFlow;
 
-  @Mock
-  private BookService bookService;
+    @Autowired
+    private BookDataService bookDataService;
 
-  @Autowired
-  private PublisherService publisherService;
+    private MockServerClient mockServerClient;
 
-  private MockServerClient mockServerClient;
+    @Autowired
+    private EntityManager entityManager;
 
-  @Test
-  void shouldCallThePublisherServiceAPIWithCorrectPayload() {
-    PublishBookDelegate publishBookDelegate = new PublishBookDelegate(bookService, publisherService);
-    UUID publisherUUID = UUID.randomUUID();
-    UUID isbnUUID = UUID.randomUUID();
-    configureMockPublishersReceiveBookOffer(isbnUUID.toString());
+    @Test
+    @Transactional
+    void shouldCallThePublisherServiceAPIWithCorrectPayload() {
+        PublishBookDelegate publishBookDelegate = new PublishBookDelegate(bookFlow);
+        UUID publisherUUID = UUID.randomUUID();
+        UUID isbnUUID = UUID.randomUUID();
+        configureMockPublishersReceiveBookOffer(isbnUUID.toString());
 
-    var author = Author.builder().id(AUTHOR_ID).firstName("firstName").lastName("lastName").build();
-    when(authorService.findById(AUTHOR_ID)).thenReturn(author);
-    var book =
-            Book.builder().id(BOOK_ID).published(false).publisherId(publisherUUID).genre(Genre.HORROR).title(
-                    "title").author(author).build();
-    when(bookService.findById(BOOK_ID)).thenReturn(book);
+        entityManager.createNativeQuery(
+                        "INSERT INTO author (id, first_name, last_name) VALUES (?,?,?)")
+                .setParameter(1, AUTHOR_ID)
+                .setParameter(2, "firstName")
+                .setParameter(3, "lastName")
+                .executeUpdate();
 
-    // when
-    publishBookDelegate.publishBook(new Book.RequestPublishingEvent(BOOK_ID, publisherUUID));
-    // then
-    mockServerClient.verify(request()
-            .withPath("/publishers/receiveBookOffer")
-            .withMethod("POST")
-            .withBody(Json.createObjectBuilder()
-                    .add("publisherId", publisherUUID.toString())
-                    .add("author", "firstName lastName")
-                    .add("title", "title")
-                    .build().toString()));
-    book.updatePublishingInfo(String.format("ISBN-%s", isbnUUID));
-    verify(bookService, times(1)).storeManuscript(book);
-  }
+        entityManager.createNativeQuery(
+                        "INSERT INTO book (id, title, author_id, genre, published, publisher_id, isbn) " +
+                                "VALUES (?,?,?,?,?,?,?)")
+                .setParameter(1, BOOK_ID)
+                .setParameter(2, "title")
+                .setParameter(3, AUTHOR_ID)
+                .setParameter(4, "HORROR")
+                .setParameter(5, false)
+                .setParameter(6, null)
+                .setParameter(7, null)
+                .executeUpdate();
 
-  private void configureMockPublishersReceiveBookOffer(String uuid) {
-    var responseBody = Json.createObjectBuilder()
-            .add("isbn", String.format("ISBN-%s", uuid))
-            .build().toString();
+        entityManager.flush();
+        BookDTO checkBook = bookDataService.findById(BOOK_ID);
+        assertThat(checkBook.published()).isFalse();
+        assertThat(checkBook.isbn()).isNull();
+        // when
+        publishBookDelegate.publishBook(new Book.RequestPublishingEvent(BOOK_ID, publisherUUID));
+        // then
+        mockServerClient.verify(request()
+                .withPath("/publishers/receiveBookOffer")
+                .withMethod("POST")
+                .withBody(Json.createObjectBuilder()
+                        .add("publisherId", publisherUUID.toString())
+                        .add("author", "firstName lastName")
+                        .add("title", "title")
+                        .build().toString()));
+        BookDTO resultBook = bookDataService.findById(BOOK_ID);
+        assertThat(resultBook.published()).isTrue();
+        assertThat(resultBook.isbn()).isEqualTo(String.format("ISBN-%s", isbnUUID));
 
-    mockServerClient.when(request().withMethod("POST").withPath("/publishers/receiveBookOffer"), exactly(1)).respond(
-            response()
-                    .withStatusCode(202)
-                    .withHeaders(new Header("Content-Type", "application/json; charset=utf-8"))
-                    .withBody(responseBody)
-                    .withDelay(TimeUnit.SECONDS,1)
-    );
-  }
+    }
+
+    private void configureMockPublishersReceiveBookOffer(String uuid) {
+        var responseBody = Json.createObjectBuilder()
+                .add("isbn", String.format("ISBN-%s", uuid))
+                .build().toString();
+
+        mockServerClient.when(request().withMethod("POST").withPath("/publishers/receiveBookOffer"), exactly(1)).respond(
+                response()
+                        .withStatusCode(202)
+                        .withHeaders(new Header("Content-Type", "application/json; charset=utf-8"))
+                        .withBody(responseBody)
+                        .withDelay(TimeUnit.SECONDS,1)
+        );
+    }
 }
 ```
-
 
 Give it a try!
 
@@ -509,6 +668,6 @@ Give it a try!
 if (allTestsGreen == true) {
     log.info("DONE! Let's move on to the next topic: The ACL adapter")}
 else{
-    log.error("Shout for help!") || (git stash && git checkout 8-acl-adapter-done)
+    log.error("Shout for help!") || (git stash && git checkout 10-process-adapter-done)
 }
 ```
