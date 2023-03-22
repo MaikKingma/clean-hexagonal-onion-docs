@@ -219,7 +219,7 @@ Great job also finishing this chapter. In case you had some trouble, feel free t
 
 ```javascript
 if (allTestsGreen == true) {
-    log.info("DONE! Let's move on to the next topic: The ACL adapter")}
+    log.info("DONE! Let's move on to the next topic: The Process adapter")}
 else{
     log.error("Shout for help!") || (git stash && git checkout 9-acl-adapter-done)
 }

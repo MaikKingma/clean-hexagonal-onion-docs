@@ -3,7 +3,7 @@ sidebar_position: 4
 ---
 
 # Create the register Author command
-For this step you will need to create classes and an interface in three packages of the "clean_hexagonal_onion" project.
+For this step you will need to create classes and an interface in two different packages in our project.
 
 ### Command
 We need to create a REST endpoint that allows us to register Authors.
@@ -35,17 +35,20 @@ _And what about the id?_ Rest assured! We will solve this one later. It remains 
 
 ![author.png](author.png)
 
-### Domain Interaction Layer
-In order to be able to interact with our core domain entities we need to define the interface
-```/domain_interaction/author/AuthorService.java``` in our domain package according to the domain model. We now inject this into 
-our ```AuthorCommands.java```class in the constructor (you could autowire it but let's stick to constructor injection).
-Nice to know: this complies with the SOLID principle of 'dependency inversion'.
+### The data port
+In order to be able to interact with our domain, we need to define a port (interface) called
+```/domain_interaction/author/AuthorService.java``` in our domain package. The required members can be found in the 
+domain model. Afterwards, we inject this into our ```AuthorCommands.java```class in the constructor 
+(you could autowire it but let's stick to constructor injection).
+
+> **Nice to know:** this complies with the SOLID principle of 'dependency inversion'. Good for us :)
 
 ![author-service.png](author-service.png)
 
-### Data
-No injection without at least one Spring Bean implementing the interface. In ```/data/author/AuthorServiceImpl.
-java``` we implement ```/domain/author/AuthorService.java``` and annotate it with the ```@Service``` annotation from Spring. 
+### The Data Layer
+No injection without at least one Spring Bean implementing the interface. After having injected the interace, at 
+least INtelliJ will show a warning or error that it requires at least one implementation.In 
+```/data/author/AuthorServiceImpl.java``` we implement ```/domain/author/AuthorService.java``` and annotate it with the ```@Service``` annotation from Spring. 
 For now, simply add a log statement of your choice to the implementation of the method ``void registerAuthor(Author author)``.
 
 ### Validation

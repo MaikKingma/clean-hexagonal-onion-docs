@@ -666,7 +666,7 @@ Give it a try!
 
 ```javascript
 if (allTestsGreen == true) {
-    log.info("DONE! Let's move on to the next topic: The ACL adapter")}
+    log.info("DONE! You finished the workshop!");
 else{
     log.error("Shout for help!") || (git stash && git checkout 10-process-adapter-done)
 }

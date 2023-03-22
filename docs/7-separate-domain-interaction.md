@@ -245,7 +245,7 @@ the clean hexagonal onion and its perks.
 
 ```javascript
 if (allTestsGreen == true) {
-    log.info("DONE! Let's move on to the next topic: n+1 - Do it yourself")}
+    log.info("DONE! Let's move on to the next topic: Do it yourself")}
 else{
     log.error("Shout for help!") || (git stash && git checkout 7-separate-domain-interaction-done)
 }
