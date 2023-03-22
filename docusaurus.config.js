@@ -48,17 +48,17 @@ const config = {
       },
       items: [
         {
-          href: 'https://github.com/MaikKingma/clean-hexagonal-onion-service',
+          href: 'https://github.com/MaikKingma/javaland-clean-hexagonal-onion',
           target: '_blank',
           label: 'GitHub',
           position: 'right',
         },
-        // {
-        //   href: 'https://docs.google.com/presentation/d/1xoGRcQx9E_19msC_-rYQdrEVwVN0L30fNDiupI4bcBY/edit?usp=sharing',
-        //   target: '_blank',
-        //   label: 'Slides',
-        //   position: 'right',
-        // },
+        {
+          href: 'https://drive.google.com/file/d/1SuDqz11hQfi6WnbBqRoA6lY5ExlF69eB/view?usp=sharing',
+          target: '_blank',
+          label: 'Slides',
+          position: 'right',
+        },
         {
           type: 'dropdown',
           label: 'About',
