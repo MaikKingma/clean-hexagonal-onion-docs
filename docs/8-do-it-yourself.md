@@ -11,6 +11,7 @@ After having completed the last chapter where we split of our domain interaction
 model:
 
 ### Domain Model Diagram
+UPDATE DOMAIN MODEL TO CONTAIN CORRECT METHODS
 ![updated_domain_model.jpg](updated_domain_model.jpg)
 
 ### The API

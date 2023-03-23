@@ -20,7 +20,9 @@ Content-Type: application/json
 }
 ```
 This endpoint should create an Author from the given Data Transfer Object (DTO) (or payload) and call the register
-function of an author on the domain interaction layer service. The standard response should be empty with status code 202.
+function of an author on the domain layer service (a port / interface). The standard response should be empty with 
+status 
+code 202.
 
 > **Tip:** You can add the above snippet in a file ``./http/AuthorCommands.http`` which allows you to execute the 
 > request from inside your IDE (if supported, IntelliJ does).
@@ -37,7 +39,7 @@ _And what about the id?_ Rest assured! We will solve this one later. It remains 
 
 ### The data port
 In order to be able to interact with our domain, we need to define a port (interface) called
-```/domain_interaction/author/AuthorService.java``` in our domain package. The required members can be found in the 
+```/domain/author/AuthorService.java``` in our domain package. The required members can be found in the 
 domain model. Afterwards, we inject this into our ```AuthorCommands.java```class in the constructor 
 (you could autowire it but let's stick to constructor injection).
 

@@ -135,7 +135,8 @@ Inject the AuthorRepository into the AuthorServiceImpl and update the function i
 
 
 ### Validation
-Let's test your implementation. Update the AuthorCommandsTest.java and replace the previously added ``register()`` test 
+Let's test your implementation. Update the AuthorCommandsIntegrationTest.java and replace the previously added 
+``register()`` test 
 with the following Test:
 
 ```java
