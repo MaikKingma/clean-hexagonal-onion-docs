@@ -48,7 +48,7 @@ const config = {
       },
       items: [
         {
-          href: 'https://github.com/MaikKingma/javaland-clean-hexagonal-onion',
+          href: 'https://github.com/MaikKingma/javaland-clean-hexagonal-onion/tree/setup-done',
           target: '_blank',
           label: 'GitHub',
           position: 'right',
