@@ -2,7 +2,7 @@
 sidebar_position: 9
 ---
 
-# The Anti-Corruption-Layer Adapter (ACL)
+# 9: The Anti-Corruption-Layer Adapter (ACL)
 
 We now want to publish an author's book. In order to do so, we need to know which publishers are even available to 
 do so. We will assume for the sake of the exercise that we need to retrieve that information from an external system 
@@ -109,11 +109,11 @@ and also add these dependencies (we need no test scope on the last two as we wil
 ```
 
 ```java
-package eu.javaland.clean_hexagonal_onion.query.publisher;
+package nl.maikkingma.clean_hexagonal_onion.query.publisher;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.publisher.PublisherDTO;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.publisher.PublisherDTO;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.model.Header;

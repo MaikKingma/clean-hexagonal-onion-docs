@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Do it yourself
+# 8: Do it yourself
 
 Back to school! First, you learn the theory, then you apply it to something new.
 What would authors be without books! (Maybe bloggers, but anyways...)

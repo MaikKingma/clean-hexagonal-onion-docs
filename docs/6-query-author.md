@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Query Authors
+# 6: Query Authors
 
 **_What goes up must come down!_**
 

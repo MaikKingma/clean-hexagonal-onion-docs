@@ -2,7 +2,7 @@
 sidebar_position: 10
 ---
 
-# The Process Adapter
+# 10: The Process Adapter
 
 We still want to publish a book. We know all available publishers from the previous section and made it available in 
 our bounded context.
@@ -200,20 +200,20 @@ know about our domain events. This is because we want to be able to consume them
 goes for the DomainEvent.class in the data adapter. JPA needs to know about our domain events to be able to fire the 
 events when the JPA entity is persisted. Here is an updated ArchUnit test:
 ```java
-@AnalyzeClasses(packages = "eu.javaland.clean_hexagonal_onion", importOptions = {ImportOption.DoNotIncludeTests.class})
+@AnalyzeClasses(packages = "nl.maikkingma.clean_hexagonal_onion", importOptions = {ImportOption.DoNotIncludeTests.class})
 public class CleanHexagonalOnionArchitectureTest {
 
     @ArchTest
     static final ArchRule layer_dependencies_are_respected =
             layeredArchitecture().consideringAllDependencies()
 
-                    .layer("command").definedBy("eu.javaland.clean_hexagonal_onion.command..")
-                    .layer("query").definedBy("eu.javaland.clean_hexagonal_onion.query..")
-                    .layer("data").definedBy("eu.javaland.clean_hexagonal_onion.data..")
-                    .layer("acl").definedBy("eu.javaland.clean_hexagonal_onion.acl..")
-                    .layer("process").definedBy("eu.javaland.clean_hexagonal_onion.process..")
-                    .layer("domain interaction").definedBy("eu.javaland.clean_hexagonal_onion.domaininteraction..")
-                    .layer("domain").definedBy("eu.javaland.clean_hexagonal_onion.domain..")
+                    .layer("command").definedBy("nl.maikkingma.clean_hexagonal_onion.command..")
+                    .layer("query").definedBy("nl.maikkingma.clean_hexagonal_onion.query..")
+                    .layer("data").definedBy("nl.maikkingma.clean_hexagonal_onion.data..")
+                    .layer("acl").definedBy("nl.maikkingma.clean_hexagonal_onion.acl..")
+                    .layer("process").definedBy("nl.maikkingma.clean_hexagonal_onion.process..")
+                    .layer("domain interaction").definedBy("nl.maikkingma.clean_hexagonal_onion.domaininteraction..")
+                    .layer("domain").definedBy("nl.maikkingma.clean_hexagonal_onion.domain..")
 
                     .whereLayer("command").mayNotBeAccessedByAnyLayer()
                     .whereLayer("query").mayNotBeAccessedByAnyLayer()
@@ -446,12 +446,12 @@ Testing the event publishing:
 > correctly for us.
   
 ```java
-import eu.javaland.clean_hexagonal_onion.data.author.AuthorJPA;
-import eu.javaland.clean_hexagonal_onion.data.author.AuthorRepository;
-import eu.javaland.clean_hexagonal_onion.domain.book.Book;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.author.AuthorDTO;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDTO;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDataService;
+import nl.maikkingma.clean_hexagonal_onion.data.author.AuthorJPA;
+import nl.maikkingma.clean_hexagonal_onion.data.author.AuthorRepository;
+import nl.maikkingma.clean_hexagonal_onion.domain.book.Book;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.author.AuthorDTO;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.book.BookDTO;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.book.BookDataService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -558,10 +558,10 @@ class EventProcessorTest {
 ```
 Testing the delegate and ACL interaction in ``src/test/.../process/book/PublishBookDelegateTest.java``:
 ```java
-import eu.javaland.clean_hexagonal_onion.domain.book.Book;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDTO;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookDataService;
-import eu.javaland.clean_hexagonal_onion.domaininteraction.book.BookFlow;
+import nl.maikkingma.clean_hexagonal_onion.domain.book.Book;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.book.BookDTO;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.book.BookDataService;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.book.BookFlow;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;

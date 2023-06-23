@@ -2,7 +2,7 @@
 sidebar_position: 7
 ---
 
-# Separate the Domain Interaction Layer
+# 7: Separate the Domain Interaction Layer
 
 The keen observer might have realised already, we are missing one layer in our package structure.
 For simplicity in the beginning, we skipped that extra layer of segregation between our Domain Code Layer
@@ -41,7 +41,7 @@ Add the dependency to the ./pom.xml file:
 ```
 Here is the test we add to ``src/test/java/eu/javaland/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``:
 ``` java
-package eu.javaland.clean_hexagonal_onion;
+package nl.maikkingma.clean_hexagonal_onion;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -50,7 +50,7 @@ import com.tngtech.archunit.lang.ArchRule;
 
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
-@AnalyzeClasses(packages = "eu.javaland.clean_hexagonal_onion",
+@AnalyzeClasses(packages = "nl.maikkingma.clean_hexagonal_onion",
                 importOptions = {ImportOption.DoNotIncludeTests.class})
 public class CleanHexagonalOnionArchitectureTest {
 
@@ -58,11 +58,11 @@ public class CleanHexagonalOnionArchitectureTest {
     static final ArchRule layer_dependencies_are_respected =
             layeredArchitecture().consideringAllDependencies()
 
-            .layer("command").definedBy("eu.javaland.clean_hexagonal_onion.command..")
-            .layer("query").definedBy("eu.javaland.clean_hexagonal_onion.query..")
-            .layer("data").definedBy("eu.javaland.clean_hexagonal_onion.data..")
-            .layer("domain interaction").definedBy("eu.javaland.clean_hexagonal_onion.domaininteraction..")
-            .layer("domain").definedBy("eu.javaland.clean_hexagonal_onion.domain..")
+            .layer("command").definedBy("nl.maikkingma.clean_hexagonal_onion.command..")
+            .layer("query").definedBy("nl.maikkingma.clean_hexagonal_onion.query..")
+            .layer("data").definedBy("nl.maikkingma.clean_hexagonal_onion.data..")
+            .layer("domain interaction").definedBy("nl.maikkingma.clean_hexagonal_onion.domaininteraction..")
+            .layer("domain").definedBy("nl.maikkingma.clean_hexagonal_onion.domain..")
 
             .whereLayer("command").mayNotBeAccessedByAnyLayer()
             .whereLayer("query").mayNotBeAccessedByAnyLayer()
@@ -111,7 +111,7 @@ logic (in case of query).
 Let's do some TDD! Here is the test for the flow class:
 
 ``` java
-package eu.javaland.clean_hexagonal_onion.domaininteraction.author;
+package nl.maikkingma.clean_hexagonal_onion.domaininteraction.author;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -178,9 +178,9 @@ adapter layer (data) but has knowledge of our domain core, namely `Author.java`.
 Here are some tests you can add to your code in order to TDD our way out of this dilemma:
 
 ``` java
-package eu.javaland.clean_hexagonal_onion.data.author;
+package nl.maikkingma.clean_hexagonal_onion.data.author;
 
-import eu.javaland.clean_hexagonal_onion.domaininteraction.author.AuthorDTO;
+import nl.maikkingma.clean_hexagonal_onion.domaininteraction.author.AuthorDTO;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -205,9 +205,9 @@ class AuthorJPAMapperTest {
 ```
 and
 ``` java
-package eu.javaland.clean_hexagonal_onion.domaininteraction.author;
+package nl.maikkingma.clean_hexagonal_onion.domaininteraction.author;
 
-import eu.javaland.clean_hexagonal_onion.domain.author.Author;
+import nl.maikkingma.clean_hexagonal_onion.domain.author.Author;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

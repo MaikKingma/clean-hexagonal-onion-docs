@@ -4,7 +4,7 @@
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Clean Hexagonal Onion with a Dash of DDD in Spring',
-  tagline: 'Javaland Workshop Day - 23.03.2023',
+  tagline: 'DevBcn Workshop - 05.07.2023',
   url: 'https://www.the-experts.nl',
   baseUrl: '/clean-hexagonal-onion-docs/',
   onBrokenLinks: 'throw',
@@ -37,7 +37,7 @@ const config = {
     },
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     navbar: {
-      title: 'Javaland Workshop',
+      title: 'DevBcn Workshop',
       hideOnScroll: true,
       logo: {
         alt: 'the/experts.',
@@ -48,13 +48,13 @@ const config = {
       },
       items: [
         {
-          href: 'https://github.com/MaikKingma/javaland-clean-hexagonal-onion/tree/setup-done',
+          href: 'https://github.com/MaikKingma/clean-hexagonal-onion-workshop/tree/setup-done',
           target: '_blank',
           label: 'GitHub',
           position: 'right',
         },
         {
-          href: 'https://drive.google.com/file/d/1SuDqz11hQfi6WnbBqRoA6lY5ExlF69eB/view?usp=sharing',
+          href: 'https://drive.google.com/file/d/1IpegpYelKGE1sdswwCyt8P4_MZtVd_fn/view?usp=sharing',
           target: '_blank',
           label: 'Slides',
           position: 'right',

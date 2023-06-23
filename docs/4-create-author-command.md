@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Create the register Author command
+# 4: Create the register Author command
 For this step you will need to create classes and an interface in two different packages in our project.
 
 ### Command

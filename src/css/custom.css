@@ -56,7 +56,7 @@
 }
 
 .hero .container::before{
-  content:url('/static/img/javaland.png'); /* with class ModalCarrot ??*/
+  content:url('/static/img/devbcn.png'); /* with class ModalCarrot ??*/
   position:relative; /*or absolute*/
 }
 
