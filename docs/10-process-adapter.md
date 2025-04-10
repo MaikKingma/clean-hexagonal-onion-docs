@@ -65,14 +65,14 @@ Content-Type: application/json
 ```
 
 > **Hint:** You can always verify that you used the correct patterns by running our 
-> ``eu/javaland/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``.
+> ``nl/maikkingma/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``.
 
 ### 3. Task: Implement the flow
 We now have a publisher that we want to publish with. Next, we need to retrieve the book corresponding to the ID form 
 the path parameter, check that it exists, then in step 4, register it for publishing.
 
 Following our flow pattern, we introduce the class 
-``eu/javaland/clean_hexagonal_onion/domaininteraction/publisher/PublisherFlow.java``. You may ask at this point, why 
+``nl/maikkingma/clean_hexagonal_onion/domaininteraction/publisher/PublisherFlow.java``. You may ask at this point, why 
 a PublisherFlow and not a BookFLow. This is a bit of a taste question. My reasoning is that there would be no 
 publishing without a publisher existing, so I chose that flow. But you could equally reason, that you can only 
 publish a book that exists. So this is eventually up to the architect to decide. Both are correct.
@@ -440,7 +440,7 @@ class BookCommandsTest {
 }
 ```
 Testing the event publishing:
- ``src/test/java/eu/javaland/clean_hexagonal_onion/data/book/BookJPATest.java``
+ ``src/test/java/nl/maikkingma/clean_hexagonal_onion/data/book/BookJPATest.java``
 
 > **Note:** We are wiring the actual repositories in this test scenario. We need them to handle the transactions
 > correctly for us.

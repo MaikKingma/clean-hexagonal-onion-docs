@@ -11,18 +11,18 @@ and the External Adapters Layer, consisting of Query, Command, Process, Data and
 However, this is leaves us with some incorrect code, and essentially we violate the principles introduced
 in the Clean Hexagonal Onion concept. Can you guess where that is?
 
-Let us have a look at the classes ``eu/javaland/clean_hexagonal_onion/command/author/AuthorCommands.java`` and 
-``eu/javaland/clean_hexagonal_onion/query/author/AuthorQueries.java``. Currently, they both  import the domain class 
+Let us have a look at the classes ``nl/maikkingma/clean_hexagonal_onion/command/author/AuthorCommands.java`` and 
+``nl/maikkingma/clean_hexagonal_onion/query/author/AuthorQueries.java``. Currently, they both  import the domain class 
 ``Auhtor.java``. And this is wrong, because we said that we want to protect our domain from the outside world and
 have only our domain interaction layer interact with the domain core.
 
 This chapter is aimed at fixing that mistake.
 
 ### Fixing the package structure
-We start by adding the missing package ``domaininteraction`` to the package ``eu/javaland/clean_hexagonal_onion``
+We start by adding the missing package ``domaininteraction`` to the package ``nl/maikkingma/clean_hexagonal_onion``
 ![domain-interaction_package.png](domain-interaction_package.png)
 
-Also, create the package ``eu/javaland/clean_hexagonal_onion/domaininteraction/author`` inside there.
+Also, create the package ``nl/maikkingma/clean_hexagonal_onion/domaininteraction/author`` inside there.
 
 ### Verifying what is wrong
 TDD to the rescue! Here is a test that will show you what we did wrong so far. We will use
@@ -39,7 +39,7 @@ Add the dependency to the ./pom.xml file:
     <scope>test</scope>
 </dependency>
 ```
-Here is the test we add to ``src/test/java/eu/javaland/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``:
+Here is the test we add to ``src/test/java/nl/maikkingma/clean_hexagonal_onion/CleanHexagonalOnionArchitectureTest.java``:
 ``` java
 package nl.maikkingma.clean_hexagonal_onion;
 
@@ -78,9 +78,9 @@ Run the test. It will throw quite a few errors, pointing out to us the classes w
 dependency rules.
 
 ### Moving code around
-Let's start fixing things. First we move the interface ``eu/javaland/clean_hexagonal_onion/domain/author/AuthorService.
+Let's start fixing things. First we move the interface ``nl/maikkingma/clean_hexagonal_onion/domain/author/AuthorService.
 java``
-to ``eu/javaland/clean_hexagonal_onion/domaininteraction/author/AuthorService.java``. Since it is essentially a port
+to ``nl/maikkingma/clean_hexagonal_onion/domaininteraction/author/AuthorService.java``. Since it is essentially a port
 we defined to access our data source, it needs to reside in the domain interaction layer.
 
 Looking at that interface, and considering the Single Responsibility Principle from SOLID, let us
@@ -99,12 +99,12 @@ public interface AuthorDataService {
 
 ### Removing domain core access in the External Adapter layer
 
-We now need to update the classes ``eu/javaland/clean_hexagonal_onion/command/author/AuthorCommands.java`` and
-``eu/javaland/clean_hexagonal_onion/query/author/AuthorQueries.java`` so that they do not have to import 
-``eu/javaland/clean_hexagonal_onion/domain/author/Author.java`` any longer.
+We now need to update the classes ``nl/maikkingma/clean_hexagonal_onion/command/author/AuthorCommands.java`` and
+``nl/maikkingma/clean_hexagonal_onion/query/author/AuthorQueries.java`` so that they do not have to import 
+``nl/maikkingma/clean_hexagonal_onion/domain/author/Author.java`` any longer.
 
 For that purpose we need add a Flow to the domain interaction layer that makes needed functionality available to the
-external adapter layer. We create the ``eu/javaland/clean_hexagonal_onion/domaininteraction/author/AuthorFlow.java``,
+external adapter layer. We create the ``nl/maikkingma/clean_hexagonal_onion/domaininteraction/author/AuthorFlow.java``,
 which will be our port for exposing the Author registration logic (in case of the command) and the finding all Authors
 logic (in case of query).
 
