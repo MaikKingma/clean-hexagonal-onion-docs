@@ -4,7 +4,7 @@
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Clean Hexagonal Onion with a Dash of DDD in Spring',
-  tagline: 'DevBcn Workshop - 05.07.2023',
+  tagline: 'Devoxx Greece Workshop - 12.04.2025',
   url: 'https://www.the-experts.nl',
   baseUrl: '/clean-hexagonal-onion-docs/',
   onBrokenLinks: 'throw',
@@ -37,7 +37,7 @@ const config = {
     },
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     navbar: {
-      title: 'DevBcn Workshop',
+      title: 'Devoxx Greece Workshop',
       hideOnScroll: true,
       logo: {
         alt: 'the/experts.',
@@ -67,11 +67,6 @@ const config = {
             {
               label: 'LinkedIn',
               href: 'https://www.linkedin.com/in/maik-kingma/',
-              target: '_blank',
-            },
-            {
-              label: 'Twitter',
-              href: 'https://twitter.com/maikkingma',
               target: '_blank',
             },
             {
