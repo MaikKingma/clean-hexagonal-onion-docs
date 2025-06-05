@@ -4,7 +4,7 @@
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Clean Hexagonal Onion with a Dash of DDD in Spring',
-  tagline: 'Devoxx Greece Workshop - 12.04.2025',
+  tagline: 'J-Spring Workshop - 05.06.2025',
   url: 'https://www.the-experts.nl',
   baseUrl: '/clean-hexagonal-onion-docs/',
   onBrokenLinks: 'throw',
@@ -37,7 +37,7 @@ const config = {
     },
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     navbar: {
-      title: 'Devoxx Greece Workshop',
+      title: 'J-Spring 2025 Workshop',
       hideOnScroll: true,
       logo: {
         alt: 'the/experts.',

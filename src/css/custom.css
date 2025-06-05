@@ -55,13 +55,16 @@
   color: white;
 }
 
-.hero .container::before{
-  content:url('/static/img/devoxx_gr.png'); /* with class ModalCarrot ??*/
-  position: absolute;
-  background: white;
-  margin: -180px -150px;
-  border-radius: 5px;
-}
+.hero .container::before {
+      content: '';
+      display: block;
+      width: 300px;
+      height: 300px;
+      position: relative;
+      background: url('/static/img/jspring2.png') center/contain no-repeat;
+      margin: -80px auto 0 auto;
+      border-radius: 5px;
+    }
 
 .hero__subtitle {
   color: white;
