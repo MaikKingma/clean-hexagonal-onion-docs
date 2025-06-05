@@ -30,7 +30,7 @@ code 202.
 ### Domain Core
 According to the domain model we need to create the class ```/domain/author/Author.java``` in our domain package. To 
 keep control of the creation of our aggregates we make the all args constructor private and instead create a 
-factory method ``public static Author createAuthor(String fristName, String lastName)``. Only our factory method will
+factory method ``public static Author createAuthor(String firstName, String lastName)``. Only our factory method will
 access the private all args constructor. That way we can keep control of the creation of Authors at all times outside our domain package.
 For now that is all we need. No getters, no setters or builders needed for now. In case you are asking yourself: 
 _And what about the id?_ Rest assured! We will solve this one later. It remains _null_ for now.
